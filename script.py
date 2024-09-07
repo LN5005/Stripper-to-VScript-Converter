@@ -1,29 +1,20 @@
 import re
 import linecache
 import csv
+import configparser
 
-    # 配置文件名称
-config = "config.cfg"
+config = configparser.ConfigParser()
+config.read('config.ini', encoding = 'utf=8')
 
-    # saferoom door's name
-SD_name_line = 4
-SDN = linecache.getline(config, SD_name_line)
-SDN = SDN.rstrip()
+MAP_name = config.get('MAP', 'Name_map').strip()
+SDN = config.get('SDB', 'SDB_targetname').strip()
+SD_exists = config.get('SDB', 'SDB_exists').strip()
 
-    # Does the saferoom's door exist?
-SD_stats_line = 6
-SD_stats = linecache.getline(config, SD_stats_line)
-SD_stats = SD_stats.rstrip()
+SD_once_origin = config.get('STV_once', 'STV_origin').strip()
+SD_once_origin = SD_once_origin.replace(' ', ',')
 
-    # if it doesn't, uses a trigger_once to replace the door
-SD_replacer_line = 8
-SD_replacer = linecache.getline(config, SD_replacer_line)
-SD_replacer = SD_replacer.rstrip()
-
-    # map's name
-MAP_name_line = 2
-MAP_name = linecache.getline(config, MAP_name_line)
-MAP_name = MAP_name.rstrip()
+SD_once_mins = config.get('STV_once', 'STV_mins').strip()
+SD_once_maxs = config.get('STV_once', 'STV_maxs').strip()
 
 # string keyvalues
 
@@ -38,7 +29,7 @@ with open('config_string_values.cfg', 'r', encoding='utf-8') as string_keyvalues
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0] , row[1] #  假设键和值总是成对出现
-        string_keyvalues[key] = value
+        string_keyvalues[key.lower()] = value
 
 # vector keyvalues
 with open('config_vector_values.cfg', 'r', encoding='utf-8') as vector_keyvalues_file:
@@ -52,7 +43,7 @@ with open('config_vector_values.cfg', 'r', encoding='utf-8') as vector_keyvalues
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        vector_keyvalues[key] = value
+        vector_keyvalues[key.lower()] = value
 
 # int keyvalues
 with open('config_int_values.cfg', 'r', encoding='utf-8') as int_keyvalues_file:
@@ -66,7 +57,7 @@ with open('config_int_values.cfg', 'r', encoding='utf-8') as int_keyvalues_file:
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        int_keyvalues[key] = value
+        int_keyvalues[key.lower()] = value
 
 # float keyvalues
 with open('config_float_values.cfg', 'r', encoding='utf-8') as float_keyvalues_file:
@@ -80,7 +71,7 @@ with open('config_float_values.cfg', 'r', encoding='utf-8') as float_keyvalues_f
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        float_keyvalues[key] = value
+        float_keyvalues[key.lower()] = value
 
 with open('config_event_classnames.cfg', 'r', encoding='utf-8') as event_classnames_file:
     # 创建一个csv reader，使用逗号作为分隔符
@@ -93,7 +84,7 @@ with open('config_event_classnames.cfg', 'r', encoding='utf-8') as event_classna
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        event_classnames[key] = value
+        event_classnames[key.lower()] = value
 
 # entity_outputs for _entities.nut
 with open('config_entity_outputs.cfg', 'r', encoding='utf-8') as entity_outputs_file:
@@ -107,7 +98,7 @@ with open('config_entity_outputs.cfg', 'r', encoding='utf-8') as entity_outputs_
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        entity_outputs[key] = value
+        entity_outputs[key.lower()] = value
 
 # blacklisted classnames
 with open('config_classname_blacklist.cfg', 'r', encoding='utf-8') as classname_blacklist_file:
@@ -121,7 +112,7 @@ with open('config_classname_blacklist.cfg', 'r', encoding='utf-8') as classname_
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        classname_blacklist[key] = value
+        classname_blacklist[key.lower()] = value
 
 # item classnames
 with open('config_items.cfg', 'r', encoding='utf-8') as items_file:
@@ -135,7 +126,7 @@ with open('config_items.cfg', 'r', encoding='utf-8') as items_file:
     for row in reader:
         # 将每一行中的元素依次作为键和值
         key, value = row[0], row[1]  # 假设键和值总是成对出现
-        items[key] = value
+        items[key.lower()] = value
 
 def convert_entity_code(
     input_file,
@@ -275,67 +266,66 @@ def convert_entity_code(
 
                     ladder_outfile.write(output)
                     last_line_empty = True
-                elif  SD_stats == "1":
-                    # print("Saferoom's door exists.")
-                    if classname in items: # 要扔进 OnFullyOpen.nut 里的实体类型，config_items.cfg
+                    
+                elif classname in items: # 要扔进 OnFullyOpen.nut 里的实体类型，config_items.cfg
                 
-                        targetname = entity_dict.get("targetname", f"item_{item_counter}")
-                        item_counter += 1
+                    targetname = entity_dict.get("targetname", f"item_{item_counter}")
+                    item_counter += 1
                     
-                        output = f'SpawnEntityFromTable("{classname}",\n{{\n'
-                        output += f'\ttargetname = "{targetname}",\n'
+                    output = f'SpawnEntityFromTable("{classname}",\n{{\n'
+                    output += f'\ttargetname = "{targetname}",\n'
                     
-                        for key, value in entity_dict.items():
-                            if key not in ["classname", "targetname"]:
-                                if key in string_keyvalues:
-                                    output += f'\t{key} = "{value}",\n'
+                    for key, value in entity_dict.items():
+                        if key not in ["classname", "targetname"]:
+                            if key in string_keyvalues:
+                                output += f'\t{key} = "{value}",\n'
                         
-                                elif key in vector_keyvalues:
-                                    vector_keyvalue = entity_dict.get(f'{key}', "0 0 0").replace(' ', ',')
-                                    value = vector_keyvalue # 将替换后的值重新赋值给 value by Google Gemini
-                                    output += f'\t{key} = Vector({value}),\n'
+                            elif key in vector_keyvalues:
+                                vector_keyvalue = entity_dict.get(f'{key}', "0 0 0").replace(' ', ',')
+                                value = vector_keyvalue # 将替换后的值重新赋值给 value by Google Gemini
+                                output += f'\t{key} = Vector({value}),\n'
 
-                                elif key in int_keyvalues:
-                                    output += f'\t{key} = {value},\n'
+                            elif key in int_keyvalues:
+                                output += f'\t{key} = {value},\n'
 
-                                elif key in float_keyvalues:
-                                    output += f'\t{key} = {value},\n'
+                            elif key in float_keyvalues:
+                                output += f'\t{key} = {value},\n'
 
-                        output += f'}});\n'
-                        for key, value in entity_dict.items():
-                            if key in entity_outputs:
-                                # 确保 value 是字符串
-                                if isinstance(value, list):
-                                    value = ','.join(value)
+                    output += f'}});\n'
+                    for key, value in entity_dict.items():
+                        if key in entity_outputs:
+                            # 确保 value 是字符串
+                            if isinstance(value, list):
+                                value = ','.join(value)
                                 
-                                values = value.split(',')
-                                param1 = values[0] if len(values) > 0 else ""
-                                param2 = values[1] if len(values) > 1 else ""
-                                param3 = values[2] if len(values) > 2 else ""
-                                param4 = values[3] if len(values) > 3 else "0"
-                                param5 = values[4] if len(values) > 4 else "-1"
-                                try:
-                                    param4 = float(param4)
-                                except ValueError:
-                                    param4 = 0
-                                try:
-                                    param5 = int(param5)
-                                except ValueError:
-                                    param5 = -1
-                                output += f'EntityOutputs.AddOutput(Entities.FindByName(null,"{targetname}"),"{key}","{param1}","{param2}","{param3}",{param4},{param5});\n'
+                            values = value.split(',')
+                            param1 = values[0] if len(values) > 0 else ""
+                            param2 = values[1] if len(values) > 1 else ""
+                            param3 = values[2] if len(values) > 2 else ""
+                            param4 = values[3] if len(values) > 3 else "0"
+                            param5 = values[4] if len(values) > 4 else "-1"
+                            try:
+                                param4 = float(param4)
+                            except ValueError:
+                                param4 = 0
+                            try:
+                                param5 = int(param5)
+                            except ValueError:
+                                param5 = -1
+                            output += f'EntityOutputs.AddOutput(Entities.FindByName(null,"{targetname}"),"{key}","{param1}","{param2}","{param3}",{param4},{param5});\n'
 
                     # 检查前一行是否为空行
-                        if not last_line_empty:
-                            onfullyopen_file.write('\n')
+                    if not last_line_empty:
+                        onfullyopen_file.write('\n')
 
-                        onfullyopen_file.write(output)
-                        last_line_empty = True
+                    onfullyopen_file.write(output)
+                    last_line_empty = True
                     
-                        if line.strip():  # 只写入非空行
-                            onfullyopen_file.write('\n')  # 保留其他行的原始格式
-                            last_line_empty = False
-                        else:
-                            last_line_empty = True
+                    if line.strip():  # 只写入非空行
+                        onfullyopen_file.write('\n')  # 保留其他行的原始格式
+                        last_line_empty = False
+                    else:
+                        last_line_empty = True
                             
                 elif classname in event_classnames: # 要扔进 events.nut 里的实体类型，config_event_classnames.cfg
                     
@@ -398,7 +388,7 @@ def convert_entity_code(
                             # 如果键值需要使用 addoutput 添加
                         elif any(key in lst for lst in [vector_keyvalues, string_keyvalues, int_keyvalues, float_keyvalues]):
                             # 如果键属于 vector, string, int 或 float 表中定义的任何键，则不执行任何操作
-                            pass
+                            output += f''
                         elif key not in [ # 不使用 EntityOutputs.AddOutput 的参数
                                 ]:
                             if isinstance(value, list):
@@ -568,12 +558,31 @@ def convert_entity_code(
             director_base_addon.write(f'			IncludeScript("{MAP_name}_events.nut", this);\n\n')
 			
             director_base_addon.write(f'//			EntityOutputs.AddOutput(Entities.FindByName(null,"{MAP_name}_events_spawner"),"OnMapSpawn","!self","RunScriptFile","{MAP_name}_events",0.0,-1);\n')
+
             director_base_addon.write(f'			EntityOutputs.AddOutput(Entities.FindByName(null,"{MAP_name}_events_spawner"),"OnMapSpawn","!self","RunScriptFile","{MAP_name}_OnMapSpawn",0.0,-1);\n')
             director_base_addon.write(f'			printl("c5m3_events_spawner has been spawned.")\n')
             director_base_addon.write('		}\n')
             director_base_addon.write('		else\n')
             director_base_addon.write('		{\n')
-            director_base_addon.write(f'		EntityOutputs.AddOutput(Entities.FindByName(null,"{SDN}"),"OnFullyOpen","!self","RunScriptFile","{MAP_name}_OnFullyOpen",0.0,1);\n')
+            
+            if SD_exists == "1":
+                director_base_addon.write(f'		EntityOutputs.AddOutput(Entities.FindByName(null,"{SDN}"),"OnFullyOpen","!self","RunScriptFile","{MAP_name}_OnFullyOpen",0.0,1);\n')
+
+            else:
+                output_event_file.write(f'SpawnEntityFromTable("trigger_once",\n')
+                output_event_file.write("{\n")
+                output_event_file.write(f'    targetname = "Stripper-to-VScript_trigger_once",\n')
+                output_event_file.write(f'    filtername = "survivor",\n')
+                output_event_file.write(f'    spawnflags = 1,\n')
+                output_event_file.write(f'    startdisabled = 0,\n')
+                
+                output_event_file.write(f'    origin = Vector({SD_once_origin}),\n')
+                output_event_file.write("});\n")
+                
+                onmapspawn_file.write(f'EntFire("Stripper-to-VScript_trigger_once","addoutput","mins {SD_once_mins}",0.0,-1);\n')
+                onmapspawn_file.write(f'EntFire("Stripper-to-VScript_trigger_once","addoutput","maxs {SD_once_maxs}",0.0,-1);\n')
+                onmapspawn_file.write(f'EntFire("Stripper-to-VScript_trigger_once","addoutput","solid 2",0.0,-1);\n')
+
             director_base_addon.write('		}\n')
             director_base_addon.write('}\n')
 
