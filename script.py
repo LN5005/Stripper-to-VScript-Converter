@@ -116,16 +116,17 @@ with open('config_classname_blacklist.cfg', 'r', encoding='utf-8') as classname_
 
 def convert_entity_code(input_file, output_file, output_ladder_file, output_event_file, onmapspawn_file, director_base_addon):
     ignore_keywords = ["add:", "modify:", "filter:"]
-    ignore_classnames = [
-        "func_playerinfected_clip",
-        "func_playerghostinfected_clip", 
-        "func_illusionary", 
-        "func_nav_attribute_region", 
-        "another_classname", 
-        "yet_another_classname"
-        ] # 要忽略的类名
+    #ignore_classnames = [
+    #    "func_playerinfected_clip",
+    #    "func_playerghostinfected_clip", 
+    #    "func_illusionary", 
+    #    "func_nav_attribute_region", 
+    #    "another_classname", 
+    #    "yet_another_classname"
+    #    ] # 要忽略的类名
     # 如果你不想这个脚本处理某些类实体，那么可以修改该行代码中的键值来排除掉相关类名（黑名单）
-
+    # 更新：把不想要的类名扔进 config_classname_blacklist.cfg 里。
+    
     ladder_models = []
     ladder_counter = 1  # 用于跟踪 func_simpleladder 的序号
     logic_auto_counter = 1  # 用于跟踪 logic_auto 的序号
@@ -184,8 +185,8 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
                             entity_dict[key] = value
 
                 classname = entity_dict.get("classname")
-                if not classname or classname in ignore_classnames:
-                    continue  # 忽略没有 classname 或 classname 在 ignore_classnames 列表中的实体
+                if not classname or classname in classname_blacklist:
+                    continue  # 忽略没有 classname 或 classname 在 config_classname_blacklist.cfg 列表中的实体
 
                 # 警告：func_simpleladder 类实体必须在 director_base_addon.nut 内执行，否则它将会干扰导航网络（navmesh）的正常工作，并导致 common 不在地图上生成！
                 if classname == "func_simpleladder":
