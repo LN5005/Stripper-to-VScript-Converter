@@ -11,7 +11,7 @@ work in progress.
 
 一般要求：
 把 Stripper 的代码扔进 input.txt 里；
-在 config.cfg 里填入地图名称（如 c5m2_park）和地图起始安全门的名称。
+在 config.cfg 里填入地图名称（如 c5m2_park）和地图起始安全门的名称；如果安全门不存在，则应更改相关参数以使相关功能能够按预期工作。
 
 ### 配置文件说明
 * config_..._values.cfg -- 键值的各种类型；将键以相应的格式，根据键值放入其中。
