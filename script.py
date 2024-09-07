@@ -10,6 +10,16 @@ SD_name_line = 4
 SDN = linecache.getline(config, SD_name_line)
 SDN = SDN.rstrip()
 
+    # Does the saferoom's door exist?
+SD_stats_line = 6
+SD_stats = linecache.getline(config, SD_stats_line)
+SD_stats = SD_stats.rstrip()
+
+    # if it doesn't, uses a trigger_once to replace the door
+SD_replacer_line = 8
+SD_replacer = linecache.getline(config, SD_replacer_line)
+SD_replacer = SD_replacer.rstrip()
+
     # map's name
 MAP_name_line = 2
 MAP_name = linecache.getline(config, MAP_name_line)
@@ -113,8 +123,30 @@ with open('config_classname_blacklist.cfg', 'r', encoding='utf-8') as classname_
         key, value = row[0], row[1]  # 假设键和值总是成对出现
         classname_blacklist[key] = value
 
+# item classnames
+with open('config_items.cfg', 'r', encoding='utf-8') as items_file:
+    # 创建一个csv reader，使用逗号作为分隔符
+    reader = csv.reader(items_file, delimiter=',')
 
-def convert_entity_code(input_file, output_file, output_ladder_file, output_event_file, onmapspawn_file, director_base_addon):
+    # 定义一个空字典来存储键值对
+    items = {}
+
+    # 读取每一行，并构建键值对
+    for row in reader:
+        # 将每一行中的元素依次作为键和值
+        key, value = row[0], row[1]  # 假设键和值总是成对出现
+        items[key] = value
+
+def convert_entity_code(
+    input_file,
+    output_file,
+    output_ladder_file,
+    output_event_file,
+    onmapspawn_file,
+    onfullyopen_file,
+    director_base_addon
+    ):
+    
     ignore_keywords = ["add:", "modify:", "filter:"]
     #ignore_classnames = [
     #    "func_playerinfected_clip",
@@ -137,12 +169,14 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
     func_entity_counter = 1
     entity_counter = 1
     prop_physics_counter = 1
+    item_counter = 1
 
     with open(input_file, 'r', encoding='utf-8') as infile, \
          open(output_file, 'w', encoding='utf-8') as outfile, \
          open(output_ladder_file, 'w', encoding='utf-8') as ladder_outfile, \
          open(output_event_file, 'w', encoding='utf-8') as output_event_file, \
          open(onmapspawn_file, 'w', encoding='utf-8') as onmapspawn_file, \
+         open(onfullyopen_file, 'w', encoding='utf-8') as onfullyopen_file, \
          open(director_base_addon, 'w', encoding='utf-8') as director_base_addon:
 
         content = infile.readlines()
@@ -241,7 +275,69 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
 
                     ladder_outfile.write(output)
                     last_line_empty = True
-                elif classname in event_classnames: # 要扔进 events.nut 里的实体类型
+                elif  SD_stats == "1":
+                    # print("Saferoom's door exists.")
+                    if classname in items: # 要扔进 OnFullyOpen.nut 里的实体类型，config_items.cfg
+                
+                        targetname = entity_dict.get("targetname", f"item_{item_counter}")
+                        item_counter += 1
+                    
+                        output = f'SpawnEntityFromTable("{classname}",\n{{\n'
+                        output += f'\ttargetname = "{targetname}",\n'
+                    
+                        for key, value in entity_dict.items():
+                            if key not in ["classname", "targetname"]:
+                                if key in string_keyvalues:
+                                    output += f'\t{key} = "{value}",\n'
+                        
+                                elif key in vector_keyvalues:
+                                    vector_keyvalue = entity_dict.get(f'{key}', "0 0 0").replace(' ', ',')
+                                    value = vector_keyvalue # 将替换后的值重新赋值给 value by Google Gemini
+                                    output += f'\t{key} = Vector({value}),\n'
+
+                                elif key in int_keyvalues:
+                                    output += f'\t{key} = {value},\n'
+
+                                elif key in float_keyvalues:
+                                    output += f'\t{key} = {value},\n'
+
+                        output += f'}});\n'
+                        for key, value in entity_dict.items():
+                            if key in entity_outputs:
+                                # 确保 value 是字符串
+                                if isinstance(value, list):
+                                    value = ','.join(value)
+                                
+                                values = value.split(',')
+                                param1 = values[0] if len(values) > 0 else ""
+                                param2 = values[1] if len(values) > 1 else ""
+                                param3 = values[2] if len(values) > 2 else ""
+                                param4 = values[3] if len(values) > 3 else "0"
+                                param5 = values[4] if len(values) > 4 else "-1"
+                                try:
+                                    param4 = float(param4)
+                                except ValueError:
+                                    param4 = 0
+                                try:
+                                    param5 = int(param5)
+                                except ValueError:
+                                    param5 = -1
+                                output += f'EntityOutputs.AddOutput(Entities.FindByName(null,"{targetname}"),"{key}","{param1}","{param2}","{param3}",{param4},{param5});\n'
+
+                    # 检查前一行是否为空行
+                        if not last_line_empty:
+                            onfullyopen_file.write('\n')
+
+                        onfullyopen_file.write(output)
+                        last_line_empty = True
+                    
+                        if line.strip():  # 只写入非空行
+                            onfullyopen_file.write('\n')  # 保留其他行的原始格式
+                            last_line_empty = False
+                        else:
+                            last_line_empty = True
+                            
+                elif classname in event_classnames: # 要扔进 events.nut 里的实体类型，config_event_classnames.cfg
                     
                     default_prefix = "unnamed_"
                     counter_map = {
@@ -289,7 +385,10 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
 
                             elif key in float_keyvalues:
                                 output += f'\t{key} = {value},\n'
-
+                                
+                            elif key in entity_outputs:
+                                output += f''
+                                
                     output += f'}});\n'
 
                     for key, value in entity_dict.items():
@@ -346,6 +445,8 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
 
                     output_event_file.write(output)
                     last_line_empty = True
+                    
+                    
                 else: # entities.nut
                     targetname = entity_dict.get("targetname", f"entity_{entity_counter}")
                     entity_counter += 1
@@ -436,8 +537,9 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
             ladder_outfile.write('	ladder_list.Kill()\n')
             ladder_outfile.write('}\n')
         # 生成 director_base_addon
-            director_base_addon.write("// Generated by LN5005's Stripper-to-VScript converter\n")
-            director_base_addon.write("// follow me, plz: https://steamcommunity.com/id/LN5005/myworkshopfiles/\n\n")
+            director_base_addon.write("// Generated by LN5005's Stripper-to-VScript Converter\n")
+            director_base_addon.write("// Github: https://github.com/LN5005/Stripper-to-VScript-Converter \n")
+            director_base_addon.write("// follow me, plz: https://steamcommunity.com/id/LN5005/myworkshopfiles/ \n\n")
             director_base_addon.write(f'local whatisthemapname = null\n')
             director_base_addon.write(f'whatisthemapname = Director.GetMapName()\n')
             director_base_addon.write(f'if(whatisthemapname == "{MAP_name}")\n')
@@ -471,8 +573,16 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
             director_base_addon.write('		}\n')
             director_base_addon.write('		else\n')
             director_base_addon.write('		{\n')
+            director_base_addon.write(f'		EntityOutputs.AddOutput(Entities.FindByName(null,"{SDN}"),"OnFullyOpen","!self","RunScriptFile","{MAP_name}_OnFullyOpen",0.0,1);\n')
             director_base_addon.write('		}\n')
             director_base_addon.write('}\n')
 
 # 使用示例
-convert_entity_code('input.txt', f'{MAP_name}_entities.nut', f'{MAP_name}_ladders.nut', f'{MAP_name}_events.nut', f'{MAP_name}_OnMapSpawn.nut', 'director_base_addon.nut')
+convert_entity_code(
+    'input.txt',
+    f'{MAP_name}_entities.nut',
+    f'{MAP_name}_ladders.nut',
+    f'{MAP_name}_events.nut',
+    f'{MAP_name}_OnMapSpawn.nut',
+    f'{MAP_name}_OnFullyOpen.nut',
+    'director_base_addon.nut')
