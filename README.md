@@ -39,5 +39,3 @@ SpawnEntityFromTable("prop_physics",
 
 被放入 _events.nut 的实体则会以特定的格式在实体外处理未知参数及其键值，但不包括 _values.cfg 定义的参数及其键值（这些参数和键值会放入实体内）。
 * config_event_classnames  决定了具有哪些类名的实体会被放入 _events.nut。
-> [!WARNING]
-> _请不要用这个脚本做坏事。如果乱用这个脚本（比如在不考虑著作权的情况下将别人的 Stripper 文件转换成 VScript 并上传到 Workshop）可能会让你吃红信（社区封禁）。_
