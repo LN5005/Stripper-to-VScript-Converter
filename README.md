@@ -20,8 +20,7 @@ work in progress.
 
 一般情况下，被放入 _entities.nut 的实体（即 {} 内）会以插入 float 或 int 的形式插入未知参数及其键值。
 如果键及其键值属于 Output，那么这会导致代码不工作，游戏引擎运行 _entities.nut 时也会因此报错。例如：
-
-[PHP]
+```
 SpawnEntityFromTable("prop_physics",
 {
 	targetname = entity_472,
@@ -31,7 +30,7 @@ SpawnEntityFromTable("prop_physics",
 	OnAwakened = ['physical_gate_wall_road,EnableMotion,,0,-1', 'bus_station_saferoom_door_nav_blocker_02,BlockNav,,0,-1'],
 	spawnflags = 1025,
 });
-[/PHP]
+```
 * 在这种情况下，要么将 output 的名称添加到上述的配置文件中来让脚本以处理 output 的形式处理该键及其键值，要么将 classname 放入 config_event_classnames 中。
 
 被放入 _events.nut 的实体则会以特定的格式在实体外处理未知参数及其键值，但不包括 _values.cfg 定义的参数及其键值（这些参数和键值会放入实体内）。* config_event_classnames  决定了具有哪些类名的实体会被放入 _events.nut。
