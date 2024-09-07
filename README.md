@@ -18,6 +18,7 @@ work in progress.
   - 例如 targetname 的键值是 string 类的，因此请将其放入 config_string_values.cfg 来让脚本生成适用于此类键值的代码格式。
 * config_event_classnames 将会出现在 _events.nut 中的实体类名。
 * config_entity_outputs 在 _entities.cfg 中处理的 Output。
+* config_classname_blacklist.cfg 则是被排除的类名。参见 https://github.com/ValveSoftware/Source-1-Games/issues/6333 
 
 一般情况下，被放入 _entities.nut 的实体（即 {} 内）会以插入 float 或 int 的形式插入未知参数及其键值。
 如果键及其键值属于 Output，那么这会导致代码不工作，游戏引擎运行 _entities.nut 时也会因此报错。例如：
