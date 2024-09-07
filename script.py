@@ -99,6 +99,21 @@ with open('config_entity_outputs.cfg', 'r', encoding='utf-8') as entity_outputs_
         key, value = row[0], row[1]  # 假设键和值总是成对出现
         entity_outputs[key] = value
 
+# blacklisted classnames
+with open('config_classname_blacklist.cfg', 'r', encoding='utf-8') as classname_blacklist_file:
+    # 创建一个csv reader，使用逗号作为分隔符
+    reader = csv.reader(classname_blacklist_file, delimiter=',')
+
+    # 定义一个空字典来存储键值对
+    classname_blacklist = {}
+
+    # 读取每一行，并构建键值对
+    for row in reader:
+        # 将每一行中的元素依次作为键和值
+        key, value = row[0], row[1]  # 假设键和值总是成对出现
+        classname_blacklist[key] = value
+
+
 def convert_entity_code(input_file, output_file, output_ladder_file, output_event_file, onmapspawn_file, director_base_addon):
     ignore_keywords = ["add:", "modify:", "filter:"]
     ignore_classnames = [
@@ -335,7 +350,7 @@ def convert_entity_code(input_file, output_file, output_ladder_file, output_even
                     entity_counter += 1
 
                     output = f'SpawnEntityFromTable("{classname}",\n{{\n'
-                    output += f'\ttargetname = {targetname},\n'
+                    output += f'\ttargetname = "{targetname}",\n'
                     
                     # 处理其他键值对
                     for key, value in entity_dict.items():
