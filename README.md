@@ -36,5 +36,8 @@ SpawnEntityFromTable("prop_physics",
 ```
 * 在这种情况下，要么将 output 的名称添加到上述的配置文件中来让脚本以处理 output 的形式处理该键及其键值，要么将 classname 放入 config_event_classnames 中。
 
-被放入 _events.nut 的实体则会以特定的格式在实体外处理未知参数及其键值，但不包括 _values.cfg 定义的参数及其键值（这些参数和键值会放入实体内）。
+被放入 _events.nut 的实体则会以处理 Output 的格式来处理未知参数及其键值，但不包括 _values.cfg 定义的参数及其键值（这些参数和键值会放入实体内）。
 * config_event_classnames  决定了具有哪些类名的实体会被放入 _events.nut。
+### 已知问题
+由于 EntFire 和 EntityOutput.AddOutput 不对 worldspawn 实体起作用，所以没有办法修改天空盒（skybox）。
+* 这要么是因为 director_base_addon.nut 的执行顺序不够前，要么是因为 skybox 的修改需要通过删除实体并重建实体来实现，要么是 mapspawn 必须通过我不知道的 VScript 方法来修改。无论是哪种情况，修改该实体可能都是高风险的（可能会引起游戏崩溃）。参见 https://developer.valvesoftware.com/wiki/Worldspawn
