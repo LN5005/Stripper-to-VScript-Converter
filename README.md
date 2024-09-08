@@ -7,6 +7,7 @@ work in progress.
 * _entities.nut -- 没有 Output 的一般实体，如 prop_dynamic;
 * _events.nut -- 需要添加 Output 的实体，如 logic_auto;
 * _OnMapSpawn.nut -- 在地图生成后通过 logic_auto 进行的操作，例如 EntityOutputs.AddOutput， EntFire 之类的。
+* _OnFullyOpen.nut -- 由安全门执行的脚本；在没有安全门的地图上使用 trigger_once 替代。 
 * _ladders.nut -- 各种梯子
 
 一般要求：
