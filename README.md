@@ -1,8 +1,6 @@
 # Stripper-to-VScript Converter
 A converter that transforms entity code from Stripper format to VScript format.
 
-work in progress.
-
 自动生成 director_base_addon、自动运行用于生成实体的脚本：
 * _entities.nut -- 没有 Output 的一般实体，如 prop_dynamic;
 * _events.nut -- 需要添加 Output 的实体，如 logic_auto;
