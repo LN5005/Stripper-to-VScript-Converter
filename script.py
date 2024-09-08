@@ -10,6 +10,8 @@ MAP_name = config.get('MAP', 'Name_map').strip()
 SDN = config.get('SDB', 'SDB_targetname').strip()
 SD_exists = config.get('SDB', 'SDB_exists').strip()
 
+SD_once_targetname = config.get('STV_once', 'STV_targetname').strip()
+
 SD_once_origin = config.get('STV_once', 'STV_origin').strip()
 SD_once_origin = SD_once_origin.replace(' ', ',')
 
@@ -230,17 +232,18 @@ def convert_entity_code(
 
                     # 处理其他键值对
                     for key, value in entity_dict.items():
-                        if key not in ["classname", "solid", "origin", "angles"]:
-                            if key == "rendermode":
+                        key_lower = key.lower()
+                        if key_lower not in ["classname", "solid", "origin", "angles"]:
+                            if key_lower == "rendermode":
                                 output += f'\trendermode = {value},\n'
-                            elif key == "model":
+                            elif key_lower == "model":
                                 output += f'\tmodel = "{value}",\n'
                                 ladder_models.append(value)  # 收集 model 参数的键值
-                            elif key == "normal.z": # 忽略 normal.z 参数（不将该参数及其键值作为 SpawnEntityFromTable 的一部分写入到输出当中）
+                            elif key_lower == "normal.z": # 忽略 normal.z 参数（不将该参数及其键值作为 SpawnEntityFromTable 的一部分写入到输出当中）
                                 output += f''
-                            elif key == "normal.x": # 同上
+                            elif key_lower == "normal.x": # 同上
                                 output += f''
-                            elif key == "normal.y": # 同上
+                            elif key_lower == "normal.y": # 同上
                                 output += f''
                             else:
                                 output += f'\t{key} = {value},\n' # 如果参数名称不为 model targetname rendermode etc, 则根据该规则写入到输出
@@ -276,19 +279,20 @@ def convert_entity_code(
                     output += f'\ttargetname = "{targetname}",\n'
                     
                     for key, value in entity_dict.items():
-                        if key not in ["classname", "targetname"]:
-                            if key in string_keyvalues:
+                        key_lower = key.lower()
+                        if key_lower not in ["classname", "targetname"]:
+                            if key_lower in string_keyvalues:
                                 output += f'\t{key} = "{value}",\n'
                         
-                            elif key in vector_keyvalues:
+                            elif key_lower in vector_keyvalues:
                                 vector_keyvalue = entity_dict.get(f'{key}', "0 0 0").replace(' ', ',')
                                 value = vector_keyvalue # 将替换后的值重新赋值给 value by Google Gemini
                                 output += f'\t{key} = Vector({value}),\n'
 
-                            elif key in int_keyvalues:
+                            elif key_lower in int_keyvalues:
                                 output += f'\t{key} = {value},\n'
 
-                            elif key in float_keyvalues:
+                            elif key_lower in float_keyvalues:
                                 output += f'\t{key} = {value},\n'
 
                     output += f'}});\n'
@@ -361,39 +365,40 @@ def convert_entity_code(
                     output += f'\ttargetname = "{targetname}",\n'
                     
                     for key, value in entity_dict.items():
-                        if key not in ["classname", "targetname"]:
-                            if key in string_keyvalues:
+                        key_lower = key.lower()
+                        if key_lower not in ["classname", "targetname"]:
+                            if key_lower in string_keyvalues:
                                 output += f'\t{key} = "{value}",\n'
                         
-                            elif key in vector_keyvalues:
+                            elif key_lower in vector_keyvalues:
                                 vector_keyvalue = entity_dict.get(f'{key}', "0 0 0").replace(' ', ',')
                                 value = vector_keyvalue # 将替换后的值重新赋值给 value by Google Gemini
                                 output += f'\t{key} = Vector({value}),\n'
 
-                            elif key in int_keyvalues:
+                            elif key_lower in int_keyvalues:
                                 output += f'\t{key} = {value},\n'
 
-                            elif key in float_keyvalues:
+                            elif key_lower in float_keyvalues:
                                 output += f'\t{key} = {value},\n'
                                 
-                            elif key in entity_outputs:
+                            elif key_lower in entity_outputs:
                                 output += f''
                                 
                     output += f'}});\n'
 
                     for key, value in entity_dict.items():
-
-                        if key == "parentname":
+                        key_lower = key.lower()
+                        if key_lower == "parentname":
                             onmapspawn_file.write(f'EntFire("{targetname}","setparent","{value}");\n')
                             # 如果键值需要使用 addoutput 添加
-                        elif any(key in lst for lst in [vector_keyvalues, string_keyvalues, int_keyvalues, float_keyvalues]):
+                        elif any(key_lower in lst for lst in [vector_keyvalues, string_keyvalues, int_keyvalues, float_keyvalues]):
                             # 如果键属于 vector, string, int 或 float 表中定义的任何键，则不执行任何操作
                             output += f''
-                        elif key not in [ # 不使用 EntityOutputs.AddOutput 的参数
+                        elif key_lower not in [ # 不使用 EntityOutputs.AddOutput 的参数
                                 ]:
                             if isinstance(value, list):
-                                for v in value:
-                                    values = v.split(',')
+                                for item in value:
+                                    values = item.split(',')
                                     param1 = values[0] if len(values) > 0 else ""
                                     param2 = values[1] if len(values) > 1 else ""
                                     param3 = values[2] if len(values) > 2 else ""
@@ -407,7 +412,7 @@ def convert_entity_code(
                                         param5 = int(param5)
                                     except ValueError:
                                         param5 = -1
-                                    if key == "OnMapSpawn":
+                                    if key_lower == "onmapspawn":
                                        onmapspawn_file.write(f'EntFire("{param1}","{param2}","{param3}",{param4},{param5});\n')
                                     else:
                                         output += f'EntityOutputs.AddOutput(Entities.FindByName(null,"{targetname}"),"{key}","{param1}","{param2}","{param3}",{param4},{param5});\n'
@@ -446,12 +451,13 @@ def convert_entity_code(
                     
                     # 处理其他键值对
                     for key, value in entity_dict.items():
-                        if key not in ["classname", "targetname"]:
+                        key_lower = key.lower()
+                        if key_lower not in ["classname", "targetname"]:
                         
-                            if key in string_keyvalues:
+                            if key_lower in string_keyvalues:
                                 output += f'\t{key} = "{value}",\n'
 
-                            elif key in vector_keyvalues:
+                            elif key_lower in vector_keyvalues:
                             
                                 if isinstance(value, list):
                                     value = ' '.join(value)
@@ -461,25 +467,26 @@ def convert_entity_code(
                                     value = vector_keyvalue # 将替换后的值重新赋值给 value by Google Gemini
                                 output += f'\t{key} = Vector({value}),\n'
 
-                            elif key in int_keyvalues:
+                            elif key_lower in int_keyvalues:
                                 output += f'\t{key} = {value},\n'
 
-                            elif key in float_keyvalues:
+                            elif key_lower in float_keyvalues:
                                 output += f'\t{key} = {value},\n'
 
-                            elif key == "parentname":
+                            elif key_lower == "parentname":
                                 onmapspawn_file.write(f'EntFire("{targetname}","setparent","{value}");\n')
                                 
-                            elif key in entity_outputs:
+                            elif key_lower in entity_outputs:
                                 output += f''
                                 
                             else:
-                                output += f'\t{key} = {value},\n'
+                                output += f'\t{key_lower} = {value},\n'
 
                     output += f'}});\n\n'
                     # 如果被放入 entities.nut 的实体具有由 config_entity_outputs.cfg 定义的 output 键值
                     for key, value in entity_dict.items():
-                        if key in entity_outputs:
+                        key_lower = key.lower()
+                        if key_lower in entity_outputs:
                             # 确保 value 是字符串
                             if isinstance(value, list):
                                 value = ','.join(value)
@@ -571,17 +578,18 @@ def convert_entity_code(
             else:
                 output_event_file.write(f'SpawnEntityFromTable("trigger_once",\n')
                 output_event_file.write("{\n")
-                output_event_file.write(f'    targetname = "Stripper-to-VScript_trigger_once",\n')
+                output_event_file.write(f'    targetname = "{SD_once_targetname}",\n')
                 output_event_file.write(f'    filtername = "survivor",\n')
                 output_event_file.write(f'    spawnflags = 1,\n')
                 output_event_file.write(f'    startdisabled = 0,\n')
                 
                 output_event_file.write(f'    origin = Vector({SD_once_origin}),\n')
                 output_event_file.write("});\n")
+                output_event_file.write(f'EntityOutputs.AddOutput(Entities.FindByName(null,"{SD_once_targetname}"),"OnTrigger","!self","RunScriptFile","{MAP_name}_OnFullyOpen",0.0,1);\n')
                 
-                onmapspawn_file.write(f'EntFire("Stripper-to-VScript_trigger_once","addoutput","mins {SD_once_mins}",0.0,-1);\n')
-                onmapspawn_file.write(f'EntFire("Stripper-to-VScript_trigger_once","addoutput","maxs {SD_once_maxs}",0.0,-1);\n')
-                onmapspawn_file.write(f'EntFire("Stripper-to-VScript_trigger_once","addoutput","solid 2",0.0,-1);\n')
+                onmapspawn_file.write(f'EntFire("{SD_once_targetname}","addoutput","mins {SD_once_mins}",0.0,-1);\n')
+                onmapspawn_file.write(f'EntFire("{SD_once_targetname}","addoutput","maxs {SD_once_maxs}",0.0,-1);\n')
+                onmapspawn_file.write(f'EntFire("{SD_once_targetname}","addoutput","solid 2",0.0,-1);\n')
 
             director_base_addon.write('		}\n')
             director_base_addon.write('}\n')
