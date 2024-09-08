@@ -48,6 +48,16 @@ ED_Alloc: No free edicts
 * 可以用 Stripper 的 stripper_dump 控制台命令来获取官图上的实体，然后根据需要移除其中的不必要实体。
 * 参见： https://developer.valvesoftware.com/wiki/Entity_limit
 
+怎么修改 vanilla 梯子的 team 参数键值？
+* 该参数虽然可以用 entfire 或者 entityoutput 的方法修改，但是却会引起 navmesh 方面上的初始化错误，具体来说就是地图上不生成任何 common（小僵尸）
+* 需要删除梯子，然后将生成梯子的代码拍进 _ladder.nut 文件里
+ 
+如果 input.txt 内有 func_simpleladder 类实体，那么它会在 _ladder.nut 底部创建一个列表和相关代码：
+
+> local ladder_models = [……
+
+将梯子的 model 键值扔进这个列表里，再将列表和跟列表有关的代码移动到顶部。这个列表会根据 model 的键值删除地图上的所有梯子，包括你添加的梯子和 TLS 更新所添加的梯子。这是因为梯子没有 targetname 和 origin 所以没办法通过一般的方法针对性地删除。
+
 _entities.nut 无法运行 -- 这通常是因为输入的代码的格式不正确引起的问题。打开游戏内控制台，查找类似的字符串：
 ```
 Initializing Director's script
@@ -75,4 +85,6 @@ scripts/vscripts/c1m1_hotel_entities.nut line = (266) column = (2) : error expre
 
 > scripts/vscripts/c1m1_hotel_entities.nut line = (1554) column = (55) : error constant too long
 
-……… 重复这个过程。除非地图只有用 Object Spawner( https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4d2_spawn_props ) 生成的 prop_dyanmic 类实体，否则报错应该是不可避免的。
+……… 重复这个过程。
+
+除非地图只有用 Object Spawner( https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4d2_spawn_props ) 生成的 prop_dyanmic 类实体，否则报错应该是不可避免的。
