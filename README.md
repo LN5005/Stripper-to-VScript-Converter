@@ -40,4 +40,39 @@ SpawnEntityFromTable("prop_physics",
 * config_event_classnames  决定了具有哪些类名的实体会被放入 _events.nut。
 ### 已知问题
 由于 EntFire 和 EntityOutput.AddOutput 不对 worldspawn 实体起作用，所以没有办法修改天空盒（skybox）。
-* 这要么是因为 director_base_addon.nut 的执行顺序不够前，要么是因为 skybox 的修改需要通过删除实体并重建实体来实现，要么是 mapspawn 必须通过我不知道的 VScript 方法来修改。无论是哪种情况，修改该实体可能都是高风险的（可能会引起游戏崩溃）。参见 https://developer.valvesoftware.com/wiki/Worldspawn
+* 这要么是因为 director_base_addon.nut 的执行顺序不够前，要么是因为 skybox 的修改需要通过删除实体并重建实体来实现，要么是 mapspawn 必须通过我不知道的 VScript 方法来修改。无论是哪种情况，修改该实体可能都是高风险的（可能会引起游戏崩溃）。
+* 参见 https://developer.valvesoftware.com/wiki/Worldspawn
+
+ED_Alloc: No free edicts
+* 你在地图上添加的实体太多了，或者你使用的其他插件生成了太多的东西。先用 EntFire 删除一些 Vanilla（原版）实体，再用 OnFullyOpen 生成实体。
+* 可以用 Stripper 的 stripper_dump 控制台命令来获取官图上的实体，然后根据需要移除其中的不必要实体。
+* 参见： https://developer.valvesoftware.com/wiki/Entity_limit
+
+_entities.nut 无法运行 -- 这通常是因为输入的代码的格式不正确引起的问题。打开游戏内控制台，查找类似的字符串：
+```
+Initializing Director's script
+Loading addon script c:\program files (x86)\steam\steamapps\common\left 4 dead 2\left4dead2\scripts\vscripts\director_base_addon.nut
+c1m1_hotel_vscript executing script: c1m1_hotel_entities
+scripts/vscripts/c1m1_hotel_entities.nut line = (266) column = (2) : error expression expected 
+```
+打开 _events.nut, 跳到第 266 行：
+> }
+
+看起来 input.txt 里的某些东西格式不正确，然后导致脚本生成了一个 }。只需要删除 input.txt 内的 } 就好了。
+
+再次运行 _entities.nut，报错：
+> scripts/vscripts/c1m1_hotel_entities.nut line = (528) column = (49) : error expected '='
+
+跳到第 528 行
+
+> onhurtplayer = !activator,speakresponseconcept,PlayerBackUp,0,5, 
+
+将 onhurtplayer 添加到 config_entitiy_outputs.cfg，该参数及其键值就会在转换脚本运行时被转换成兼容的格式：
+
+> EntityOutputs.AddOutput(Entities.FindByName(null,"sky_fire_hurt"),"OnHurtPlayer","!activator","speakresponseconcept","PlayerBackUp",0.0,5);
+
+再次运行 _entities.nut，报错：
+
+> scripts/vscripts/c1m1_hotel_entities.nut line = (1554) column = (55) : error constant too long
+
+……… 重复这个过程。除非地图只有用 Object Spawner( https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4d2_spawn_props ) 生成的 prop_dyanmic 类实体，否则报错应该是不可避免的。
