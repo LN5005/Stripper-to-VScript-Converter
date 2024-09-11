@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Translation</title>
+</head>
+<body>
+    <h1>(Translated by Copilot)Automatically generate <code>director_base_addon</code> and automatically run scripts to spawn entities:</h1>
+    <ul>
+        <li><code>_entities.nut</code> -- General entities without Output, such as <code>prop_dynamic</code>;</li>
+        <li><code>_events.nut</code> -- Entities that need to add Output, such as <code>logic_auto</code>;</li>
+        <li><code>_OnMapSpawn.nut</code> -- Operations performed through <code>logic_auto</code> after the map is spawned, such as <code>EntityOutputs.AddOutput</code>, <code>EntFire</code>, etc.;</li>
+        <li><code>_OnFullyOpen.nut</code> -- Scripts executed by the starting safe door; use <code>trigger_once</code> on maps without the saferoom door;</li>
+        <li><code>_ladders.nut</code> -- Various ladders.</li>
+    </ul>
+    <h2>General requirements:</h2>
+    <p>Put the Stripper code into <code>input.txt</code>; fill in the map name (e.g., <code>c5m2_park</code>) and the targetname of the starting safe door in <code>config.cfg</code>; if the safe door does not exist, change the relevant parameters to make the related functions work as expected.</p>
+    <h2>Configuration file instructions:</h2>
+    <ul>
+        <li><code>config_..._values.cfg</code> -- Various types of key values; put the keys in the corresponding format according to the key values.
+            <ul>
+                <li>For example, the key value of <code>targetname</code> is of the <code>string</code> type, so put it in <code>config_string_values.cfg</code> to let the script generate the code format suitable for this type of key value.</li>
+            </ul>
+        </li>
+        <li><code>config_event_classnames</code> -- Entity classnames that will appear in <code>_events.nut</code>.</li>
+        <li><code>config_entity_outputs</code> -- Outputs that will be handled in <code>_entities.cfg</code>.</li>
+        <li><code>config_classname_blacklist.cfg</code> -- Classnames that are excluded. See <a href="https://github.com/ValveSoftware/Source-1-Games/issues/6333">https://github.com/ValveSoftware/Source-1-Games/issues/6333</a>.</li>
+        <li><code>config_items</code> -- Entity classnames that will be spawned by the safe door. The reason for using the safe door to spawn entities is that entities such as medkits, molotovs, and ammo packs spawned by other methods will be invisible for unknown reasons.
+            <ul>
+                <li>You can also put some code into <code>_OnFullyOpen.nut</code> to delay its execution order, such as code used to kill (remove) entities added by the TLS update.</li>
+                <li>Generally, entities placed in <code>_entities.nut</code> (i.e., within <code>{}</code>) will insert unknown parameters and their key values in the form of <code>float</code> or <code>int</code>. If the key and its key value belong to Output, this will cause the code not to work, and the game engine will report an error when running <code>_entities.nut</code>. For example:</li>
+            </ul>
+            <pre><code>SpawnEntityFromTable("prop_physics",
+{
+    targetname = entity_472,
+    origin = Vector(-7350,-8272,-27),
+    angles = Vector(0,90,0),
+    model = "models/props_vehicles/airport_baggage_cart2.mdl",
+    OnAwakened = ['physical_gate_wall_road,EnableMotion,,0,-1', 'bus_station_saferoom_door_nav_blocker_02,BlockNav,,0,-1'],
+    spawnflags = 1025,
+});</code></pre>
+            <ul>
+                <li>In this case, either add the name of the output to the above configuration file to let the script handle the key and its key value as an output, or put the classname in <code>config_event_classnames</code>.</li>
+                <li>Entities placed in <code>_events.nut</code> will handle unknown parameters and their key values in the format of handling Outputs, but not including parameters and their key values defined in <code>_values.cfg</code> (these parameters and key values will be placed inside the entity).</li>
+            </ul>
+        </li>
+    </ul>
+    <h2>Known issues:</h2>
+    <ul>
+        <li>Since <code>EntFire</code> and <code>EntityOutput.AddOutput</code> do not work on the <code>worldspawn</code> entity, there is no way to modify the skybox.
+            <ul>
+                <li>This is either because the execution order of <code>director_base_addon.nut</code> is not early enough, or because modifying the skybox requires deleting and recreating the entity, or because <code>mapspawn</code> must be modified through a VScript method unknown to me. In any case, modifying this entity may be high-risk (it may cause the game to crash).</li>
+                <li>See <a href="https://developer.valvesoftware.com/wiki/Worldspawn">https://developer.valvesoftware.com/wiki/Worldspawn</a>.</li>
+            </ul>
+        </li>
+    </ul>
+    <h2>ED_Alloc: No free edicts</h2>
+    <ul>
+        <li>You have added too many entities to the map, or other plugins you are using have generated too many things. First, use <code>EntFire</code> to delete some vanilla entities, and then use <code>OnFullyOpen</code> to spawn entities.
+            <ul>
+                <li>You can use Stripper's <code>stripper_dump</code> console command to get the entities on the map, and then remove unnecessary entities as needed.</li>
+                <li>See <a href="https://developer.valvesoftware.com/wiki/Entity_limit">https://developer.valvesoftware.com/wiki/Entity_limit</a>.</li>
+            </ul>
+        </li>
+    </ul>
+    <h2>How to modify the team parameter key value of vanilla ladders?</h2>
+    <ul>
+        <li>Although this parameter can be modified using <code>entfire</code> or <code>entityoutput</code>, it will cause initialization errors in the navmesh, specifically, no common (zombies) will be spawned on the map.
+            <ul>
+                <li>You need to delete the vanilla ladder and then put the code to spawn the vanilla ladder into the <code>_ladder.nut</code> file.</li>
+                <li>If there is a <code>func_simpleladder</code> entity in <code>input.txt</code>, it will create a list and related code at the bottom of <code>_ladder.nut</code>:</li>
+            </ul>
+            <pre><code>local ladder_models = […]</code></pre>
+            <ul>
+                <li>Put the model key "value" of the ladder into this list, and then move the list and related code to the top. This list will delete all ladders on the map based on the model key value, including the vanilla ladders, the ladders you added and the ladders added by the TLS update. This is because ladders do not have <code>targetname</code> and <code>origin</code>, so there is no way to delete them selectively using general methods.</li>
+            </ul>
+        </li>
+    </ul>
+    <h2><code>_entities.nut</code> cannot run</h2>
+    <ul>
+        <li>This is usually caused by incorrect formatting of the input code. Open the in-game console and look for similar strings:</li>
+    </ul>
+    <pre><code>Initializing Director's script
+Loading addon script c:\program files (x86)\steam\steamapps\common\left 4 dead 2\left4dead2\scripts\vscripts\director_base_addon.nut
+c1m1_hotel_vscript executing script: c1m1_hotel_entities
+scripts/vscripts/c1m1_hotel_entities.nut line = (266) column = (2) : error expression expected </code></pre>
+    <ul>
+        <li>Open <code>_events.nut</code>, go to line 266:</li>
+    </ul>
+    <pre><code>}</code></pre>
+    <ul>
+        <li>It looks like something in <code>input.txt</code> is incorrectly formatted, causing the script to spawn a <code>}</code>. Just delete the <code>}</code> in <code>input.txt</code>.</li>
+        <li>Run <code>_entities.nut</code> again, error:</li>
+    </ul>
+    <pre><code>scripts/vscripts/c1m1_hotel_entities.nut line = (528) column = (49) : error expected '='</code></pre>
+    <ul>
+        <li>Go to line 528:</li>
+    </ul>
+    <pre><code>onhurtplayer = !activator,speakresponseconcept,PlayerBackUp,0,5,</code></pre>
+    <ul>
+        <li>Add <code>onhurtplayer</code> to <code>config_entitiy_outputs.cfg</code>, and this parameter and its key value will be converted to a compatible format when the conversion script runs:</li>
+    </ul>
+    <pre><code>EntityOutputs.AddOutput(Entities.FindByName(null,"sky_fire_hurt"),"OnHurtPlayer","!activator","speakresponseconcept","PlayerBackUp",0.0,5);</code></pre>
+    <ul>
+        <li>Run <code>_entities.nut</code> again, error:</li>
+    </ul>
+    <pre><code>scripts/vscripts/c1m1_hotel_entities.nut line = (1554) column = (55) : error constant too long</code></pre>
+    <ul>
+        <li>Repeat this process.</li>
+        <li>Unless the map only has <code>prop_dynamic</code> entities spawned by Object Spawner (<a href="https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4d2_spawn_props">https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4d2_spawn_props</a>), errors are probably unavoidable.</li>
+    </ul>
+</body>
+</html>
