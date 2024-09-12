@@ -476,8 +476,8 @@ def convert_entity_code(
                             elif key_lower == "parentname":
                                 onmapspawn_file.write(f'EntFire("{targetname}","setparent","{value}");\n')
                             
-                            elif key_lower == "slavename":
-                                onmapspawn_file.write(f'EntFire("{targetname}","setparent","{value}");\n')
+                            # elif key_lower == "slavename":
+                            #    onmapspawn_file.write(f'EntFire("{targetname}","setparent","{value}");\n')
                                 
                             elif key_lower in entity_outputs:
                                 output += f''
